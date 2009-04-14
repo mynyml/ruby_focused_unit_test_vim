@@ -1,3 +1,9 @@
+"" To allow the command to run within vim instead of being output into a buffer,
+"" set the following var in your .vimrc
+""
+""   let g:ruby_focused_unit_test_use_buffer = 0
+""
+
 if !has("ruby")
   finish
 end
@@ -12,6 +18,15 @@ endfunction
 function! s:RunAllRubyTests()
   ruby RubyFocusedUnitTest.new.run_all
 endfunction
+
+"" function source: rails.vim (Tim Pope)
+function! s:SetOptDefault(opt,val)
+  if !exists("g:".a:opt)
+    let g:{a:opt} = a:val
+  endif
+endfunction
+
+call s:SetOptDefault("ruby_focused_unit_test_use_buffer", 1)
 
 ruby << EOF
 module VIM
@@ -49,6 +64,19 @@ module VIM
 end
 
 class RubyFocusedUnitTest
+  class Config
+    class << self
+      def true_value?(value)
+        ! %w( 0 false nil null none no ).include?(value)
+      end
+      def variable(name)
+        VIM::evaluate("g:ruby_focused_unit_test_#{name}")
+      end
+    end
+  end
+end
+
+class RubyFocusedUnitTest
   DEFAULT_OUTPUT_BUFFER = "rb_test_output"
 
   def write_output_to_buffer(test_command)
@@ -70,6 +98,14 @@ class RubyFocusedUnitTest
     VIM::Buffer.current.line_number 
   end
 
+  def run(test_command)
+    if Config.true_value?(Config.variable('use_buffer'))
+      write_output_to_buffer(test_command)
+    else
+      VIM::command("!#{test_command}")
+    end
+  end
+
   def run_spec
     write_output_to_buffer("spec #{current_file} -l #{line_number}")
   end
@@ -88,7 +124,7 @@ class RubyFocusedUnitTest
       end
     end
 
-    write_output_to_buffer("ruby #{current_file} -n #{method_name}") if method_name
+    run(%|ruby #{current_file} -n "#{method_name}"|) if method_name
   end
 
   def run_test
@@ -100,8 +136,9 @@ class RubyFocusedUnitTest
   end
 
   def run_all
-    write_output_to_buffer("ruby #{current_file}")
+    run("ruby #{current_file}")
   end
 end
 EOF
+
 
