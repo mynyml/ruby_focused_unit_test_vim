@@ -2,8 +2,8 @@ if !has("ruby")
   finish
 end
 
-command RunRubyFocusedUnitTest :call <SID>RunRubyFocusedUnitTest()
-command RunAllRubyTests :call <SID>RunAllRubyTests()
+command! RunRubyFocusedUnitTest :call <SID>RunRubyFocusedUnitTest()
+command! RunAllRubyTests :call <SID>RunAllRubyTests()
 
 function! s:RunRubyFocusedUnitTest()
   ruby RubyFocusedUnitTest.new.run_test
